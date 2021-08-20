@@ -1,3 +1,5 @@
+# working on alphazero for tic tac toe
+
 import random
 import math
 import numpy as np
