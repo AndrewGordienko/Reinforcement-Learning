@@ -1,4 +1,3 @@
-from cv2 import threshold
 import gym
 from copy import deepcopy
 import random
