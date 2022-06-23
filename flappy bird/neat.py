@@ -1,9 +1,12 @@
+import gym
 from copy import deepcopy
 import random
 import numpy as np
 import math
 
-observation_space = 3
+#env = gym.make('CartPole-v1')
+env = gym.make('LunarLander-v2')
+observation_space = 5
 action_space = 2
 all_connections = []
 
@@ -204,6 +207,8 @@ class Agent():
                 second_random_node_index = random.randint(0, len(self.network[second_random_layer])-1)
                 second_random_node = self.network[second_random_layer][second_random_node_index]
 
+                #print("node {} layer {} number {}".format(first_random_node, first_random_node.layer_number, first_random_node.number))
+                #print("node {} layer {} number {}".format(second_random_node, second_random_node.layer_number, second_random_node.number))
                 connected = False
                 for i in range(len(first_random_node.connections_out)):
                     if first_random_node.connections_out[i].output_node_number == second_random_node.number:
@@ -234,6 +239,11 @@ class Agent():
             self.network[random_layer][random_node_index].connections_out[random_connection_index].enabled = False
 
     def mutate_weight_shift(self):
+        #print("mutate weight shift")
+        #self.printing_stats()
+        #print("--")
+        #print(self.connections)
+        #print("--")
         random_layer = random.randint(0, len(self.network)-2)
         random_node_index = random.randint(0, len(self.network[random_layer])-1)
         random_node = self.network[random_layer][random_node_index]
@@ -318,7 +328,7 @@ class Agent():
                 W += abs(species1.connections_weight[index_species_one] - species2.connections_weight[index_species_two])
 
         number = E/N + D/N + 0.5*W
-        #print(number)
+        #print("value is {}".format(number))
         return number
 
     def selecting_score(self, all_parents):
@@ -400,3 +410,4 @@ class Agent():
                     child.connections_weight.append(child.network[i][j].connections_out[k].weight)     
 
         return child
+
