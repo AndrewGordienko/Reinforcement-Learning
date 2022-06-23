@@ -70,7 +70,7 @@ class Pipe:
 
             self.pipe_xs[i] -= self.scroll
 
-            if self.pipe_xs[i] <= bird.bird_x:
+            if self.pipe_xs[i] + 25 <= bird.bird_x:
                 if len(self.pipes) <= max_score:
                     self.pipes.append(self.distances())
                     self.pipe_xs.append(self.space + self.space * (len(self.pipes)-1))
@@ -85,7 +85,7 @@ class Pipe:
 
 class Bird:
     def __init__(self):
-        self.bird_x = 75
+        self.bird_x = 275
         self.bird_y = HEIGHT/2
         self.dimension = 20
         self.v_x = 10
@@ -95,6 +95,8 @@ class Bird:
         self.passed = 0
         self.d1 = None
         self.d2 = None
+        self.d3 = None
+        self.d4 = None
     
     def draw(self):
         self.bird_y += self.gravity
@@ -115,7 +117,21 @@ class Bird:
         pygame.draw.line(screen, (255, 0, 0), starting_position, ending_position)
         self.d2 = math.sqrt((abs(self.bird_x - pipe.pipe_xs[self.passed]))**2 + (abs(self.bird_y - (pipe.pipes[self.passed][0] + GAP)))**2)
         
-        distances = (self.d1, self.d2)
+        if self.passed != 0:
+            starting_position = (self.bird_x + self.dimension/2, self.bird_y + self.dimension/2)
+            ending_position = (pipe.pipe_xs[self.passed - 1] + 50, pipe.pipes[self.passed - 1][0])
+            pygame.draw.line(screen, (255, 0, 0), starting_position, ending_position)
+            self.d3 = math.sqrt((abs(self.bird_x - pipe.pipe_xs[self.passed - 1]))**2 + (abs(self.bird_y - pipe.pipes[self.passed - 1][0]))**2)
+
+            starting_position = (self.bird_x + self.dimension/2, self.bird_y + self.dimension/2)
+            ending_position = (pipe.pipe_xs[self.passed - 1] + 50, pipe.pipes[self.passed - 1][0] + GAP)
+            pygame.draw.line(screen, (255, 0, 0), starting_position, ending_position)
+            self.d4 = math.sqrt((abs(self.bird_x - pipe.pipe_xs[self.passed - 1] + 50))**2 + (abs(self.bird_y - (pipe.pipes[self.passed - 1][0] + GAP)))**2)
+        else:
+            self.d3 = self.d1
+            self.d4 = self.d2
+
+        distances = (self.d1, self.d2, self.d3, self.d4)
     
     def collision(self):
         collide = False
@@ -152,8 +168,8 @@ networks = []
 epochs = 50
 best_score = float("-inf")
 best_agent = None
-greed_exponent = 4
-threshold_species = 2
+greed_exponent = 2
+threshold_species = 4
 max_score = 500
 
 for i in range(network_amount):
@@ -199,7 +215,7 @@ for e in range(epochs):
                     if event.key == pygame.K_UP:
                         bird.v_y = bird.hop
             
-            state = [bird.d1, bird.d2, bird.bird_y]
+            state = [bird.d1, bird.d2, bird.d3, bird.d4, bird.bird_y]
             action = agent.choose_action(state)
             score = bird.passed
 
@@ -243,6 +259,7 @@ for e in range(epochs):
     
     average_general_fitness /= len(networks)
     networks.append(deepcopy(best_agent))
+
     print("epoch {} best score {} average fitness {}".format(e, best_score, average_general_fitness))
     
     local_best_fitness = []
@@ -251,11 +268,12 @@ for e in range(epochs):
     best_fitnesss = []
     for i in range(len(best_agents)):
         best_fitnesss.append(deepcopy(best_agents[i].fitness))
-        
     print("local best fitnesss {}".format(local_best_fitness))
     print("best overall fitness {}".format(best_fitnesss))
 
+
     species.append([networks[0]])
+
     for i in range(1, len(networks)):
         added = False
         for j in range(len(species)):
@@ -263,11 +281,13 @@ for e in range(epochs):
                 species[j].append(networks[i])
                 added = True
                 break
+
         if added == False:
             species.append([networks[i]])
 
     for i in range(len(species)):
         species[i].sort(key=lambda x: x.fitness, reverse=True)
+
     for i in range(len(species)):
         cutting = len(species[i])//2
         new_species = species[i][0:len(species[i]) - cutting]
@@ -328,3 +348,4 @@ for e in range(epochs):
             new_networks.append(deepcopy(agent))
 
     networks = new_networks
+    threshold_species += 0.1 * (5 - len(species))
